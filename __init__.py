@@ -38,14 +38,17 @@ if OPENROUTER_API_KEY:
     except Exception:
         client = None
 
-# Session States
-if "has_seen_birthday" not in st.session_state:
+# Query Parameter & Session Check for Permanent 1-Time Surprise
+if "seen" in st.query_params or "has_seen_birthday" in st.session_state:
+    st.session_state.has_seen_birthday = True
+else:
     st.session_state.has_seen_birthday = False
+
 if "show_celebration" not in st.session_state:
     st.session_state.show_celebration = False
 
 # -------------------------------------------------------------
-# 🎁 1. MAILBOX SURPRISE (SIRF PEHLI BAAR)
+# 🎁 1. MAILBOX SURPRISE (STRICT 1-TIME ONLY)
 # -------------------------------------------------------------
 if not st.session_state.has_seen_birthday and not st.session_state.show_celebration:
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -58,14 +61,12 @@ if not st.session_state.has_seen_birthday and not st.session_state.show_celebrat
             <p style="color: #cbd5e1;">Click below to open your birthday surprise card!</p>
         </div>
         """, unsafe_allow_html=True)
+        
         if st.button("👆 Open Surprise Gift", use_container_width=True):
             st.session_state.has_seen_birthday = True
             st.session_state.show_celebration = True
-            components.html("""
-            <script>
-                localStorage.setItem("acc_birthday_shown_once", "true");
-            </script>
-            """, height=0)
+            # Set permanent query parameter in URL so it never repeats
+            st.query_params["seen"] = "true"
             st.rerun()
 
 # -------------------------------------------------------------
@@ -190,7 +191,6 @@ else:
             q = user_query.lower()
             bot_reply = ""
             
-            # Dynamic OpenRouter AI Call with Proper System Guardrails
             if client and OPENROUTER_API_KEY:
                 try:
                     messages_for_api = [
@@ -206,7 +206,6 @@ else:
                             )
                         }
                     ]
-                    # Append recent conversation history
                     for m in st.session_state.chat_history[-5:]:
                         messages_for_api.append({"role": m["role"], "content": m["content"]})
 
@@ -219,7 +218,6 @@ else:
                 except Exception:
                     bot_reply = ""
 
-            # Fallback Guardrail Logic (if API key is missing or failed)
             if not bot_reply:
                 if "salam" in q or "assalam" in q:
                     bot_reply = "Walaikum Assalam! Web of ACC mein aapka istiqbaal hai. Main aapki kya madad kar sakta hoon?"
