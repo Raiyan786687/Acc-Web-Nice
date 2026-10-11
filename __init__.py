@@ -24,33 +24,25 @@ def local_css(file_name):
 local_css("style.css")
 
 # Credentials
-SIR_WHATSAPP = os.getenv("NEXT_PUBLIC_SIR_WHATSAPP_NUMBER", "923433000385")  # Default to a placeholder number if not set
+SIR_WHATSAPP = os.getenv("NEXT_PUBLIC_SIR_WHATSAPP_NUMBER", "923492584693")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 
 client = None
 if OPENROUTER_API_KEY:
-    client = OpenAI(
-        base_url=OPENROUTER_BASE_URL,
-        api_key=OPENROUTER_API_KEY,
-    )
+    try:
+        client = OpenAI(
+            base_url=OPENROUTER_BASE_URL,
+            api_key=OPENROUTER_API_KEY,
+        )
+    except Exception:
+        client = None
 
 # Session States
 if "has_seen_birthday" not in st.session_state:
     st.session_state.has_seen_birthday = False
 if "show_celebration" not in st.session_state:
     st.session_state.show_celebration = False
-
-# Check LocalStorage via JS Component for One-Time Gift
-localstorage_check = """
-<script>
-    const seen = localStorage.getItem("acc_birthday_shown_once");
-    if (seen === "true") {
-        // Already seen
-    }
-</script>
-"""
-components.html(localstorage_check, height=0)
 
 # -------------------------------------------------------------
 # 🎁 1. MAILBOX SURPRISE (SIRF PEHLI BAAR)
@@ -69,7 +61,6 @@ if not st.session_state.has_seen_birthday and not st.session_state.show_celebrat
         if st.button("👆 Open Surprise Gift", use_container_width=True):
             st.session_state.has_seen_birthday = True
             st.session_state.show_celebration = True
-            # Mark permanent in browser
             components.html("""
             <script>
                 localStorage.setItem("acc_birthday_shown_once", "true");
@@ -176,14 +167,14 @@ else:
                 else:
                     st.error("Please fill Name and Phone Number!")
 
-    # 🤖 GUARDRAILED CHATBOT IN SIDEBAR
+    # 🤖 DYNAMIC & GUARDRAILED CHATBOT IN SIDEBAR
     with st.sidebar:
         st.markdown("### 🤖 ACC AI Assistant")
-        st.markdown("<p style='font-size:12px; color:#94a3b8;'>Strictly Guardrailed OpenRouter Assistant</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size:12px; color:#94a3b8;'>Smart ACC Admission Assistant</p>", unsafe_allow_html=True)
 
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = [
-                {"role": "assistant", "content": "Assalamualikum! Welcome to Web of ACC. Class ya admission ke baare mein poochen."}
+                {"role": "assistant", "content": "Assalamualikum! ACC Ahmed Coaching Center mein khushamdeed. Aap classes ya admission ke hawale se kya poochna chahte hain?"}
             ]
 
         for msg in st.session_state.chat_history:
@@ -199,32 +190,51 @@ else:
             q = user_query.lower()
             bot_reply = ""
             
-            if "salam" in q or "assalam" in q:
-                bot_reply = "Walaikum Assalam! Web of ACC mein khushamdeed."
-            elif any(w in q for w in ["hi", "hello", "hey"]):
-                bot_reply = "Hello! ACC Coaching Center ki janib se khushamdeed. Kaise madad kar sakta hoon?"
-            elif client and OPENROUTER_API_KEY:
+            # Dynamic OpenRouter AI Call with Proper System Guardrails
+            if client and OPENROUTER_API_KEY:
                 try:
+                    messages_for_api = [
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are the official AI Assistant for ACC Ahmed Coaching Center located in Malir / Alameen City. "
+                                "Be polite, helpful, and concise. ACC offers classes from Class 1 to Class 10, as well as 11th & 12th "
+                                "(Computer Science, Pre-Engineering, Arts, Commerce). "
+                                "Respond in friendly Roman Urdu or English matching the user. "
+                                "If the user asks general greetings like salam/hi, greet them back nicely. "
+                                "If the user asks off-topic questions unrelated to studies or coaching, politely state that you can only answer queries about ACC Coaching Center."
+                            )
+                        }
+                    ]
+                    # Append recent conversation history
+                    for m in st.session_state.chat_history[-5:]:
+                        messages_for_api.append({"role": m["role"], "content": m["content"]})
+
                     response = client.chat.completions.create(
-                        model="google/gemini-flash-1.5",
-                        messages=[
-                            {"role": "system", "content": "You are a strict assistant for ACC Ahmed Coaching Center in Malir/Alameen City. Only answer queries related to ACC admissions, classes (Computer Science, Pre-Engineering, Arts, Commerce), and coaching details. If asked anything else, politely redirect them to coaching details."},
-                            {"role": "user", "content": user_query}
-                        ],
+                        model="meta-llama/llama-3.2-3b-instruct:free",
+                        messages=messages_for_api,
                         max_tokens=150
                     )
                     bot_reply = response.choices[0].message.content
                 except Exception:
-                    bot_reply = "ACC Coaching Center mein Class 1 se 2nd Year tak classes hoti hain."
-            else:
-                if any(w in q for w in ["class", "course", "subject", "field"]):
-                    bot_reply = "ACC mein Class 1 se 2nd Year (Computer Science, Pre-Engineering, Arts, Commerce) ki classes hoti hain."
-                elif any(w in q for w in ["admission", "apply", "fee"]):
-                    bot_reply = "Online admission ke liye baraye meherbani form fill karke WhatsApp par details bhejien."
-                elif any(w in q for w in ["location", "address"]):
+                    bot_reply = ""
+
+            # Fallback Guardrail Logic (if API key is missing or failed)
+            if not bot_reply:
+                if "salam" in q or "assalam" in q:
+                    bot_reply = "Walaikum Assalam! Web of ACC mein aapka istiqbaal hai. Main aapki kya madad kar sakta hoon?"
+                elif any(w in q for w in ["hi", "hello", "hey", "hlo"]):
+                    bot_reply = "Hello! ACC Ahmed Coaching Center ki janib se khushamdeed. Aap admission ke bare mein pooch rahe hain?"
+                elif any(w in q for w in ["class", "course", "subject", "field", "stream"]):
+                    bot_reply = "ACC mein Class 1 se 2nd Year (Computer Science, Pre-Engineering, Arts, Commerce) ki tayyari karwai jaati hai."
+                elif any(w in q for w in ["admission", "apply", "fee", "form", "daakhla"]):
+                    bot_reply = "Online admission ke liye baraye meherbani saath diye gaye form ko fill karke WhatsApp button par click karein."
+                elif any(w in q for w in ["location", "address", "kahan", "place"]):
                     bot_reply = "ACC Coaching Center Malir / Alameen City mein sthit hai."
+                elif any(w in q for w in ["teacher", "faculty", "sir"]):
+                    bot_reply = "ACC mein highly qualified aur experienced teachers parhenay ke liye maujood hain."
                 else:
-                    bot_reply = "Main sirf ACC Coaching Center aur admission ke hawale se madad kar sakta hoon."
+                    bot_reply = "Main ACC Coaching Center ka official assistant hoon. Main sirf admissions, classes, aur coaching ke hawale se madad kar sakta hoon."
 
             st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
             with st.chat_message("assistant"):
