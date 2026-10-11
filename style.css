@@ -1,0 +1,51 @@
+.stApp {
+    background-color: #020617;
+    color: #f8fafc;
+}
+
+/* VIP Card & Hover Lift Effect */
+.vip-card {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.vip-card:hover,
+.hover-lift:hover {
+    transform: translateY(-6px) !important;
+    box-shadow: 0 15px 35px rgba(245, 158, 11, 0.2) !important;
+}
+
+.glow-title {
+    color: #fbbf24;
+    text-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+    font-weight: 800;
+}
+
+/* Buttons with Hover Effect */
+.stButton>button {
+    background-color: #f59e0b !important;
+    color: #020617 !important;
+    font-weight: bold !important;
+    border-radius: 12px !important;
+    border: none !important;
+    padding: 10px 24px !important;
+    transition: transform 0.3s ease !important;
+}
+
+.stButton>button:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3) !important;
+}
+
+.stTextInput input,
+.stTextArea textarea {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+}
