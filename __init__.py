@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import re
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -111,7 +112,7 @@ with col_form:
             else:
                 st.error("Please fill Name and Phone Number!")
 
-# 🤖 STRICTLY GUARDRAILED ACC AI ASSISTANT IN SIDEBAR
+# 🤖 100% STRICT GUARDRAILED CHATBOT IN SIDEBAR
 with st.sidebar:
     st.markdown("### 🤖 ACC AI Assistant")
     st.markdown("<p style='font-size:12px; color:#94a3b8;'>Ahmed Coaching Center Official Assistant</p>", unsafe_allow_html=True)
@@ -134,9 +135,47 @@ with st.sidebar:
         q = user_query.lower()
         bot_reply = ""
         
-        # Basic greeting checks
+        # 1. Greetings
         if any(w in q for w in ["salam", "assalam", "hi", "hello", "hey"]):
             bot_reply = "Walaikum Assalam! Web of ACC (Ahmed Coaching Center, Malir/Alameen City) mein khushamdeed. Aap kis class ki fee ya admission detail janna chahte hain?"
+        
+        # 2. Strict Exact Single-Class Match (Hard Guardrail)
+        elif any(c in q for c in ["1st year", "eleventh", "11th"]):
+            bot_reply = "1st Year ki monthly fee **Rs. 4,000** hai."
+        elif any(c in q for c in ["2nd year", "twelfth", "12th"]):
+            bot_reply = "2nd Year ki monthly fee **Rs. 4,000** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?1\b', q) and not re.search(r'\b(10|11|12|1st)\b', q):
+            bot_reply = "Class 1 ki monthly fee **Rs. 2,000** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?2\b', q) and not re.search(r'\b(12|2nd)\b', q):
+            bot_reply = "Class 2 ki monthly fee **Rs. 2,000** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?3\b', q):
+            bot_reply = "Class 3 ki monthly fee **Rs. 2,000** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?4\b', q):
+            bot_reply = "Class 4 ki monthly fee **Rs. 2,000** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?5\b', q):
+            bot_reply = "Class 5 ki monthly fee **Rs. 2,000** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?6\b', q):
+            bot_reply = "Class 6 ki monthly fee **Rs. 2,500** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?7\b', q):
+            bot_reply = "Class 7 ki monthly fee **Rs. 2,500** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?8\b', q):
+            bot_reply = "Class 8 ki monthly fee **Rs. 2,500** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?9\b', q) or "matric" in q or "9th" in q:
+            bot_reply = "Class 9th ki monthly fee **Rs. 3,000** hai."
+        elif re.search(r'\b(class|cls|grade|class\s*)?10\b', q) or "10th" in q:
+            bot_reply = "Class 10th ki monthly fee **Rs. 3,000** hai."
+
+        # 3. All Classes Fee Structure Request
+        elif any(w in q for w in ["sari", "sab", "all", "full list", "entire", "structure"]):
+            bot_reply = (
+                "**ACC Coaching Center Fee Structure:**\n"
+                "- Class 1 to 5: Rs. 2,000 / month\n"
+                "- Class 6 to 8: Rs. 2,500 / month\n"
+                "- Class 9 & 10 (Matric): Rs. 3,000 / month\n"
+                "- 1st Year & 2nd Year: Rs. 4,000 / month"
+            )
+
+        # 4. OpenRouter API Fallback for Complex Queries
         elif client and OPENROUTER_API_KEY:
             try:
                 response = client.chat.completions.create(
@@ -145,62 +184,27 @@ with st.sidebar:
                         {
                             "role": "system", 
                             "content": (
-                                "You are the official AI assistant for ACC (Ahmed Coaching Center) in Malir & Alameen City, Karachi. "
-                                "EXACT FEE STRUCTURE:\n"
-                                "- Class 1, 2, 3, 4, 5: Rs. 2,000 per month\n"
-                                "- Class 6, 7, 8: Rs. 2,500 per month\n"
-                                "- Class 9, 10 (Matric): Rs. 3,000 per month\n"
-                                "- 1st Year, 2nd Year (Intermediate): Rs. 4,000 per month\n\n"
+                                "You are the strict official AI assistant for ACC (Ahmed Coaching Center) in Malir & Alameen City, Karachi. "
+                                "FEE LIST:\n"
+                                "- Class 1 to 5: Rs. 2,000\n"
+                                "- Class 6 to 8: Rs. 2,500\n"
+                                "- Class 9 & 10: Rs. 3,000\n"
+                                "- 1st & 2nd Year: Rs. 4,000\n\n"
                                 "STRICT RULES:\n"
-                                "1. STRICTLY MATCH THE USER'S EXACT CLASS: If the user asks for a specific class (e.g., 'class 8 fee' or '8 ki fee'), you must give the fee ONLY for that specific class (e.g. Class 8 fee is Rs. 2,500 per month). Do NOT list other classes unless explicitly asked.\n"
-                                "2. If the user asks for ALL fees, fee structure, or overall charges (e.g. 'sari classes ki fee batao'), then only show the full list.\n"
-                                "3. If the user asks ANYTHING unrelated to ACC coaching, classes, admissions, or fees, strictly refuse: 'Maaf kijiye ga, main sirf ACC Coaching Center, classes, fees aur admissions ke hawale se maloomat de sakta hoon.'\n"
-                                "Always answer politely in Roman Urdu / Urdu."
+                                "1. If the user asks for a single specific class fee, answer ONLY for that specific class. Never list other classes.\n"
+                                "2. If the user asks anything unrelated to ACC coaching, admissions, classes, or fees, strictly refuse by saying: "
+                                "'Maaf kijiye ga, main sirf ACC Coaching Center, classes, fees aur admissions ke hawale se maloomat de sakta hoon.'"
                             )
                         },
                         {"role": "user", "content": user_query}
                     ],
-                    max_tokens=150
+                    max_tokens=100
                 )
                 bot_reply = response.choices[0].message.content
             except Exception:
-                bot_reply = "Fee details ke liye baraye meherbani Online Form fill karke WhatsApp par Sir se direct rabta karein."
-        else:
-            # Precise Fallback Logic
-            if any(w in q for w in ["class 1", " class 1", " 1 ki fee", "1st class"]):
-                bot_reply = "Class 1 ki monthly fee **Rs. 2,000** hai."
-            elif any(w in q for w in ["class 2", " 2 ki fee", "2nd class"]):
-                bot_reply = "Class 2 ki monthly fee **Rs. 2,000** hai."
-            elif any(w in q for w in ["class 3", " 3 ki fee", "3rd class"]):
-                bot_reply = "Class 3 ki monthly fee **Rs. 2,000** hai."
-            elif any(w in q for w in ["class 4", " 4 ki fee", "4th class"]):
-                bot_reply = "Class 4 ki monthly fee **Rs. 2,000** hai."
-            elif any(w in q for w in ["class 5", " 5 ki fee", "5th class"]):
-                bot_reply = "Class 5 ki monthly fee **Rs. 2,000** hai."
-            elif any(w in q for w in ["class 6", " 6 ki fee", "6th class"]):
-                bot_reply = "Class 6 ki monthly fee **Rs. 2,500** hai."
-            elif any(w in q for w in ["class 7", " 7 ki fee", "7th class"]):
-                bot_reply = "Class 7 ki monthly fee **Rs. 2,500** hai."
-            elif any(w in q for w in ["class 8", " 8 ki fee", "8th class"]):
-                bot_reply = "Class 8 ki monthly fee **Rs. 2,500** hai."
-            elif any(w in q for w in ["class 9", " 9 ki fee", "9th", "matric"]):
-                bot_reply = "Class 9th ki monthly fee **Rs. 3,000** hai."
-            elif any(w in q for w in ["class 10", " 10 ki fee", "10th"]):
-                bot_reply = "Class 10th ki monthly fee **Rs. 3,000** hai."
-            elif any(w in q for w in ["1st year", "eleventh", "11"]):
-                bot_reply = "1st Year ki monthly fee **Rs. 4,000** hai."
-            elif any(w in q for w in ["2nd year", "twelfth", "12"]):
-                bot_reply = "2nd Year ki monthly fee **Rs. 4,000** hai."
-            elif any(w in q for w in ["fee", "fees", "structure", "list", "paisa", "charges", "sari"]):
-                bot_reply = (
-                    "**ACC Coaching Center Fee Structure:**\n"
-                    "- Class 1 to 5: Rs. 2,000 / month\n"
-                    "- Class 6 to 8: Rs. 2,500 / month\n"
-                    "- Class 9 & 10 (Matric): Rs. 3,000 / month\n"
-                    "- 1st Year & 2nd Year: Rs. 4,000 / month"
-                )
-            else:
                 bot_reply = "Maaf kijiye ga, main sirf ACC Coaching Center, classes, fees aur admissions ke hawale se maloomat de sakta hoon."
+        else:
+            bot_reply = "Maaf kijiye ga, main sirf ACC Coaching Center, classes, fees aur admissions ke hawale se maloomat de sakta hoon."
 
         st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
         with st.chat_message("assistant"):
