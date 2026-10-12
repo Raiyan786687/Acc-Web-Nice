@@ -34,7 +34,7 @@ if OPENROUTER_API_KEY:
     )
 
 # -------------------------------------------------------------
-# 🌐 MAIN VIP WEBSITE
+# 🌐 MAIN VIP WEBSITE (Direct Open - Birthday Content Removed)
 # -------------------------------------------------------------
 
 # Header
@@ -118,14 +118,14 @@ with st.sidebar:
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
-            {"role": "assistant", "content": "Assalamualikum! Welcome to Web of ACC. Aap yahan admissions, classes, fees, ya coaching ke hawale se pooch sakte hain."}
+            {"role": "assistant", "content": "Assalamualikum! Welcome to Web of ACC. Aap admissions, kisi bhi class ki fee, ya coaching details ke baare mein pooch sakte hain."}
         ]
 
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    user_query = st.chat_input("Ask about ACC...")
+    user_query = st.chat_input("Ask about ACC fees, classes...")
     if user_query:
         st.session_state.chat_history.append({"role": "user", "content": user_query})
         with st.chat_message("user"):
@@ -136,7 +136,7 @@ with st.sidebar:
         
         # Basic greeting checks
         if any(w in q for w in ["salam", "assalam", "hi", "hello", "hey"]):
-            bot_reply = "Walaikum Assalam! Web of ACC (Ahmed Coaching Center, Malir/Alameen City) mein khushamdeed. Bataiye, admission ya classes ke baray mein kya maloom karna chahte hain?"
+            bot_reply = "Walaikum Assalam! Web of ACC (Ahmed Coaching Center, Malir/Alameen City) mein khushamdeed. Aap kis class ki fee ya admission detail janna chahte hain?"
         elif client and OPENROUTER_API_KEY:
             try:
                 response = client.chat.completions.create(
@@ -145,12 +145,20 @@ with st.sidebar:
                         {
                             "role": "system", 
                             "content": (
-                                "You are the strict, professional official AI assistant for ACC (Ahmed Coaching Center) located in Malir and Alameen City, Karachi. "
-                                "Your ONLY job is to answer queries related to ACC coaching center, classes (Class 1 to 2nd Year: Computer Science, Pre-Engineering, Arts, Commerce), "
-                                "admission process, fees, timings, teachers, and weekly tests. "
-                                "CRITICAL RULE: If the user asks about anything unrelated to ACC coaching, admissions, studies, or classes (e.g., coding, general knowledge, movies, personal questions, weather, etc.), "
-                                "you MUST politely refuse and say: 'Maaf kijiye ga, main sirf ACC Coaching Center, classes, aur admissions ke hawale se maloomat de sakta hoon.' "
-                                "Always respond politely in Urdu/Roman Urdu."
+                                "You are the official AI assistant for ACC (Ahmed Coaching Center) in Malir & Alameen City, Karachi. "
+                                "EXACT FEE STRUCTURE AT ACC:\n"
+                                "- Class 1 to Class 5: Rs. 2,000 per month\n"
+                                "- Class 6, 7, & 8: Rs. 2,500 per month\n"
+                                "- Class 9 & Class 10 (Matric): Rs. 3,000 per month\n"
+                                "- 1st Year & 2nd Year (Intermediate - CS, Pre-Eng, Arts, Commerce): Rs. 4,000 per month\n\n"
+                                "STRICT ANSWERING RULES:\n"
+                                "1. If the user asks for fee of a SPECIFIC class (e.g. 'Class 9 fee', '1st year ki kitni hai', 'Class 3 fee'), "
+                                "ONLY tell the fee for that specific class. Do NOT mention other classes.\n"
+                                "2. If the user asks for ALL fees, fee structure, or overall charges (e.g. 'sari classes ki fee batao', 'fee structure kya hai'), "
+                                "show the full fee list for all classes (Class 1-5: Rs. 2000, 6-8: Rs. 2500, 9-10: Rs. 3000, 1st/2nd Year: Rs. 4000).\n"
+                                "3. If the user asks ANYTHING unrelated to ACC coaching, admissions, classes, or fees (e.g., coding, weather, general knowledge, movies, games), "
+                                "you MUST strictly refuse by saying: 'Maaf kijiye ga, main sirf ACC Coaching Center, classes, fees aur admissions ke hawale se maloomat de sakta hoon.'\n"
+                                "Always answer politely in Roman Urdu / Urdu."
                             )
                         },
                         {"role": "user", "content": user_query}
@@ -159,17 +167,27 @@ with st.sidebar:
                 )
                 bot_reply = response.choices[0].message.content
             except Exception:
-                bot_reply = "Maaf kijiye ga, filhal connection mein kuch masla hai. Baraye meherbani form fill kar ke WhatsApp par rabta karein."
+                bot_reply = "Fee details ke liye baraye meherbani Online Form fill karke WhatsApp par Sir se direct rabta karein."
         else:
-            # Fallback if API key is missing
-            if any(w in q for w in ["class", "course", "subject", "field", "science", "arts", "commerce", "engineering"]):
-                bot_reply = "ACC mein Class 1 se 2nd Year tak (Computer Science, Pre-Engineering, Arts, Commerce) ki shandar classes hoti hain."
-            elif any(w in q for w in ["admission", "apply", "fee", "charges"]):
-                bot_reply = "Online admission ke liye aap page par diya gaya form fill kar ke seedha WhatsApp par request bhej sakte hain."
-            elif any(w in q for w in ["location", "address", "malir", "alameen"]):
-                bot_reply = "ACC Coaching Center Malir / Alameen City mein waqay hai."
+            # Fallback logic if OpenRouter API is offline
+            if any(w in q for w in ["1", "2", "3", "4", "5", "primary", "one", "two", "three", "four", "five"]):
+                bot_reply = "Class 1 se 5 tak ki monthly fee **Rs. 2,000** hai."
+            elif any(w in q for w in ["6", "7", "8", "six", "seven", "eight"]):
+                bot_reply = "Class 6, 7 aur 8 ki monthly fee **Rs. 2,500** hai."
+            elif any(w in q for w in ["9", "9th", "10", "10th", "matric", "nine", "ten"]):
+                bot_reply = "Class 9th aur 10th (Matric) ki monthly fee **Rs. 3,000** hai."
+            elif any(w in q for w in ["11", "11th", "12", "12th", "1st year", "2nd year", "inter", "intermediate"]):
+                bot_reply = "1st Year aur 2nd Year (Computer Science, Pre-Engineering, Arts, Commerce) ki monthly fee **Rs. 4,000** hai."
+            elif any(w in q for w in ["fee", "fees", "structure", "list", "paisa", "charges", "sari"]):
+                bot_reply = (
+                    "**ACC Coaching Center Fee Structure:**\n"
+                    "- Class 1 to 5: Rs. 2,000 / month\n"
+                    "- Class 6 to 8: Rs. 2,500 / month\n"
+                    "- Class 9 & 10 (Matric): Rs. 3,000 / month\n"
+                    "- 1st Year & 2nd Year: Rs. 4,000 / month"
+                )
             else:
-                bot_reply = "Maaf kijiye ga, main sirf ACC Coaching Center, classes, aur admissions ke hawale se maloomat de sakta hoon."
+                bot_reply = "Maaf kijiye ga, main sirf ACC Coaching Center, classes, fees aur admissions ke hawale se maloomat de sakta hoon."
 
         st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
         with st.chat_message("assistant"):
