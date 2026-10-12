@@ -22,6 +22,7 @@
 
 .glow-title {
     color: #fbbf24;
+    text-align: center;
     text-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
     font-weight: 800;
 }
