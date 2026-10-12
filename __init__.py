@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -23,7 +22,7 @@ def local_css(file_name):
 local_css("style.css")
 
 # Credentials
-SIR_WHATSAPP = os.getenv("NEXT_PUBLIC_SIR_WHATSAPP_NUMBER", "923433000385")  # Default placeholder number
+SIR_WHATSAPP = os.getenv("NEXT_PUBLIC_SIR_WHATSAPP_NUMBER", "923433000385")  
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 
@@ -35,7 +34,7 @@ if OPENROUTER_API_KEY:
     )
 
 # -------------------------------------------------------------
-# 🌐 MAIN VIP WEBSITE (Direct Open)
+# 🌐 MAIN VIP WEBSITE
 # -------------------------------------------------------------
 
 # Header
@@ -112,14 +111,14 @@ with col_form:
             else:
                 st.error("Please fill Name and Phone Number!")
 
-# 🤖 GUARDRAILED CHATBOT IN SIDEBAR
+# 🤖 STRICTLY GUARDRAILED ACC AI ASSISTANT IN SIDEBAR
 with st.sidebar:
     st.markdown("### 🤖 ACC AI Assistant")
-    st.markdown("<p style='font-size:12px; color:#94a3b8;'>Strictly Guardrailed OpenRouter Assistant</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size:12px; color:#94a3b8;'>Ahmed Coaching Center Official Assistant</p>", unsafe_allow_html=True)
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
-            {"role": "assistant", "content": "Assalamualikum! Welcome to Web of ACC. Class ya admission ke baare mein poochen."}
+            {"role": "assistant", "content": "Assalamualikum! Welcome to Web of ACC. Aap yahan admissions, classes, fees, ya coaching ke hawale se pooch sakte hain."}
         ]
 
     for msg in st.session_state.chat_history:
@@ -135,32 +134,42 @@ with st.sidebar:
         q = user_query.lower()
         bot_reply = ""
         
-        if "salam" in q or "assalam" in q:
-            bot_reply = "Walaikum Assalam! Web of ACC mein khushamdeed."
-        elif any(w in q for w in ["hi", "hello", "hey"]):
-            bot_reply = "Hello! ACC Coaching Center ki janib se khushamdeed. Kaise madad kar sakta hoon?"
+        # Basic greeting checks
+        if any(w in q for w in ["salam", "assalam", "hi", "hello", "hey"]):
+            bot_reply = "Walaikum Assalam! Web of ACC (Ahmed Coaching Center, Malir/Alameen City) mein khushamdeed. Bataiye, admission ya classes ke baray mein kya maloom karna chahte hain?"
         elif client and OPENROUTER_API_KEY:
             try:
                 response = client.chat.completions.create(
                     model="google/gemini-flash-1.5",
                     messages=[
-                        {"role": "system", "content": "You are a strict assistant for ACC Ahmed Coaching Center in Malir/Alameen City. Only answer queries related to ACC admissions, classes (Computer Science, Pre-Engineering, Arts, Commerce), and coaching details. If asked anything else, politely redirect them to coaching details."},
+                        {
+                            "role": "system", 
+                            "content": (
+                                "You are the strict, professional official AI assistant for ACC (Ahmed Coaching Center) located in Malir and Alameen City, Karachi. "
+                                "Your ONLY job is to answer queries related to ACC coaching center, classes (Class 1 to 2nd Year: Computer Science, Pre-Engineering, Arts, Commerce), "
+                                "admission process, fees, timings, teachers, and weekly tests. "
+                                "CRITICAL RULE: If the user asks about anything unrelated to ACC coaching, admissions, studies, or classes (e.g., coding, general knowledge, movies, personal questions, weather, etc.), "
+                                "you MUST politely refuse and say: 'Maaf kijiye ga, main sirf ACC Coaching Center, classes, aur admissions ke hawale se maloomat de sakta hoon.' "
+                                "Always respond politely in Urdu/Roman Urdu."
+                            )
+                        },
                         {"role": "user", "content": user_query}
                     ],
                     max_tokens=150
                 )
                 bot_reply = response.choices[0].message.content
             except Exception:
-                bot_reply = "ACC Coaching Center mein Class 1 se 2nd Year tak classes hoti hain."
+                bot_reply = "Maaf kijiye ga, filhal connection mein kuch masla hai. Baraye meherbani form fill kar ke WhatsApp par rabta karein."
         else:
-            if any(w in q for w in ["class", "course", "subject", "field"]):
-                bot_reply = "ACC mein Class 1 se 2nd Year (Computer Science, Pre-Engineering, Arts, Commerce) ki classes hoti hain."
-            elif any(w in q for w in ["admission", "apply", "fee"]):
-                bot_reply = "Online admission ke liye baraye meherbani form fill karke WhatsApp par details bhejien."
-            elif any(w in q for w in ["location", "address"]):
-                bot_reply = "ACC Coaching Center Malir / Alameen City mein sthit hai."
+            # Fallback if API key is missing
+            if any(w in q for w in ["class", "course", "subject", "field", "science", "arts", "commerce", "engineering"]):
+                bot_reply = "ACC mein Class 1 se 2nd Year tak (Computer Science, Pre-Engineering, Arts, Commerce) ki shandar classes hoti hain."
+            elif any(w in q for w in ["admission", "apply", "fee", "charges"]):
+                bot_reply = "Online admission ke liye aap page par diya gaya form fill kar ke seedha WhatsApp par request bhej sakte hain."
+            elif any(w in q for w in ["location", "address", "malir", "alameen"]):
+                bot_reply = "ACC Coaching Center Malir / Alameen City mein waqay hai."
             else:
-                bot_reply = "Main sirf ACC Coaching Center aur admission ke hawale se madad kar sakta hoon."
+                bot_reply = "Maaf kijiye ga, main sirf ACC Coaching Center, classes, aur admissions ke hawale se maloomat de sakta hoon."
 
         st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
         with st.chat_message("assistant"):
